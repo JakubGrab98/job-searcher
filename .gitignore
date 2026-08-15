@@ -7,3 +7,8 @@ venv/
 *.sqlite3
 data/
 generated_cvs/
+
+# Real config with your PII / actual criteria — .example.yaml files are the
+# tracked templates; these are your filled-in versions and stay local-only.
+config/filters.yaml
+config/cv_library.yaml

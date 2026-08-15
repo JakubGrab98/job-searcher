@@ -1,22 +1,118 @@
-# Copy to config/cv_library.yaml and fill in with YOUR real, truthful experience.
-# Each bullet is tagged with keywords the tailoring step matches against offer content.
-# Do not add anything here that isn't true — the tailoring step only reorders/selects
-# from this library, it never invents content.
+# ==========================================================================
+# cv_library.yaml
+# --------------------------------------------------------------------------
+# Copy this file to config/cv_library.yaml (gitignored) and fill it in with
+# YOUR real, truthful experience. The tailoring step only ever selects,
+# reorders, and lightly rephrases bullets from this library for a given
+# offer — it never invents skills, employers, or claims that aren't here.
+#
+# Every bullet carries a `tags` list. The tailoring step matches these tags
+# (and free-text) against an offer's description/tech stack to decide which
+# bullets are most relevant to surface for that specific application.
+#
+# Where the same underlying fact could be phrased two different ways, you
+# can add both as separate bullets and link the alternate with
+# `variant_of: <id-of-the-other-bullet>` — mark IDs by giving the first
+# bullet in a variant group an explicit `id:` field. The tailoring step
+# picks whichever phrasing best fits the target job description; this adds
+# wording choice, not new facts.
+# ==========================================================================
 
-summary: "Data engineer specializing in automating financial reporting and analytics pipelines."
+candidate:
+  name: "Your Name"
+  headline: "Data Engineer"
+  contact:
+    email: "you@example.com"
+    phone: "+00 000 000 000"
+  languages:
+    - name: "English"
+  interests: ["Example hobby"]
 
+# --------------------------------------------------------------------------
+# EDUCATION
+# --------------------------------------------------------------------------
+education:
+  - degree: "BSc, Example Field"
+    institution: "Example University"
+    dates: "09.2018 – 06.2022"
+    tags: ["education"]
+
+# --------------------------------------------------------------------------
+# CERTIFICATIONS
+# --------------------------------------------------------------------------
+certifications:
+  - name: "Example Certification"
+    date: "2025"
+    tags: ["example_tag", "certification"]
+
+# --------------------------------------------------------------------------
+# SUMMARY VARIANTS
+# Keep more than one if you pitch yourself differently for different roles
+# (e.g. a generalist angle vs. a specialist angle) — pick/blend per offer.
+# --------------------------------------------------------------------------
+summaries:
+  general_data_engineer:
+    text: >
+      Example results-driven summary describing years of experience and the
+      main technical areas you want every tailored CV to lead with.
+    tags: ["general", "example_tech"]
+
+# --------------------------------------------------------------------------
+# EXPERIENCE
+# Each bullet is atomic and independently selectable.
+# --------------------------------------------------------------------------
 experience:
   - company: "Example Corp"
-    title: "Data Engineer"
-    start_date: "2023-01"
-    end_date: "present"
+    team: "Example Team"
+    role: "Data Engineer"
+    dates: "01.2023 – present"
     bullets:
-      - id: "example-1"
+      - id: "example-etl-bullet"
         text: "Built an ETL pipeline moving daily transaction data from Postgres to a Snowflake warehouse, cutting manual reporting time by 80%."
         tags: [etl, pipeline, finance, snowflake, postgres, reporting]
+      - text: "Delivered ELT pipelines and transformation workflows with equivalent tooling, with version control and CI/CD as standard practice."
+        tags: [elt, ci_cd, git]
+        variant_of: "example-etl-bullet"
 
+# --------------------------------------------------------------------------
+# PERSONAL PROJECTS
+# --------------------------------------------------------------------------
+personal_projects:
+  - name: "Example Personal Project"
+    description: >
+      One or two sentences on what it does and why you built it.
+    stack: ["Example Tool A", "Example Tool B"]
+    tags: ["example_tag", "personal_project"]
+    link: "github.com/your-handle"
+
+# --------------------------------------------------------------------------
+# CORE SKILLS
+# `proficiency` (0-100) is optional context for you, not necessarily
+# rendered on every tailored CV.
+# --------------------------------------------------------------------------
 skills:
-  - name: "Python"
-    tags: [python]
   - name: "SQL"
-    tags: [sql]
+    proficiency: 80
+    tags: ["sql"]
+  - name: "Python"
+    proficiency: 80
+    tags: ["python"]
+
+# --------------------------------------------------------------------------
+# ACKNOWLEDGED GAPS
+# Not for CV bullets — lets tailoring logic flag when an offer asks for
+# something you don't have, and lets interview prep reuse an honest
+# "name the gap, bridge to adjacent experience" framing.
+# --------------------------------------------------------------------------
+acknowledged_gaps:
+  - name: "Example Missing Tech"
+    bridge: "Adjacent experience that transfers conceptually."
+
+# --------------------------------------------------------------------------
+# CAREER NARRATIVE (for cover-letter / soft-skill answers, not CV bullets)
+# --------------------------------------------------------------------------
+career_narrative:
+  goal: "Where you want this to lead career-wise."
+  path: "Prior role → current role → target role."
+  differentiators:
+    - "Whatever makes you a distinctive candidate beyond the skill list."
