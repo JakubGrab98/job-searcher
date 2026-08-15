@@ -1,0 +1,23 @@
+[project]
+name = "jobsearcher"
+version = "0.1.0"
+description = "Personal justjoin.it offer ingestion, filtering, CV tailoring, and application tool"
+requires-python = ">=3.11"
+dependencies = [
+    "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+jobsearcher = ["db/schema.sql"]

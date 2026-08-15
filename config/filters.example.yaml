@@ -1,0 +1,26 @@
+# Copy to config/filters.yaml and edit — this file is your actual filter criteria.
+# Any list left empty means "no restriction" for that criterion.
+
+role_keywords:            # offer title or tech stack must contain at least one (case-insensitive)
+  - data engineer
+  - analytics engineer
+  - etl
+  - pipeline
+  - finance data
+
+contract_types: []        # e.g. ["b2b"] — empty = accept any employment type
+
+seniority: []              # e.g. ["mid", "senior"] — empty = accept any seniority
+
+salary_floor: null         # e.g. 150 — minimum acceptable rate/salary, null = no floor
+salary_period: hour        # hour | day | month — must match how you read justjoin.it rates
+currency: PLN               # only enforced if the offer's currency matches; mismatches are not filtered
+
+locations: []               # e.g. ["Warszawa", "remote"] — empty = accept any location
+remote_ok: true             # if true, remote offers always pass the location check
+
+tech_must_have: []          # ALL of these must appear in the offer's tech stack
+tech_nice_to_have: []       # informational only — recorded in match reasons, doesn't filter
+
+excluded_companies: []      # exact company name matches to always reject
+excluded_industries: []     # informational for now — no industry field from ingestion yet

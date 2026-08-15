@@ -1,0 +1,22 @@
+# Copy to config/cv_library.yaml and fill in with YOUR real, truthful experience.
+# Each bullet is tagged with keywords the tailoring step matches against offer content.
+# Do not add anything here that isn't true — the tailoring step only reorders/selects
+# from this library, it never invents content.
+
+summary: "Data engineer specializing in automating financial reporting and analytics pipelines."
+
+experience:
+  - company: "Example Corp"
+    title: "Data Engineer"
+    start_date: "2023-01"
+    end_date: "present"
+    bullets:
+      - id: "example-1"
+        text: "Built an ETL pipeline moving daily transaction data from Postgres to a Snowflake warehouse, cutting manual reporting time by 80%."
+        tags: [etl, pipeline, finance, snowflake, postgres, reporting]
+
+skills:
+  - name: "Python"
+    tags: [python]
+  - name: "SQL"
+    tags: [sql]
