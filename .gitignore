@@ -12,3 +12,6 @@ generated_cvs/
 # tracked templates; these are your filled-in versions and stay local-only.
 config/filters.yaml
 config/cv_library.yaml
+
+# Google OAuth client secret + stored token — real credentials, never commit.
+secrets/
