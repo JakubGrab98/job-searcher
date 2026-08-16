@@ -7,7 +7,6 @@ guess. Not part of the app's runtime pipeline.
 Run: .venv/Scripts/python.exe scripts/fetch_sample_alert.py
 """
 
-import base64
 import os
 import sys
 
@@ -16,37 +15,9 @@ from dotenv import load_dotenv
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from jobsearcher.gmail.auth import get_gmail_service  # noqa: E402
+from jobsearcher.gmail.messages import extract_bodies, get_header  # noqa: E402
 
 load_dotenv()
-
-
-def _get_header(headers: list[dict], name: str) -> str | None:
-    for h in headers:
-        if h["name"].lower() == name.lower():
-            return h["value"]
-    return None
-
-
-def _extract_body(payload: dict) -> tuple[str | None, str | None]:
-    """Returns (text_plain, text_html) bodies, searching nested MIME parts."""
-    text_plain = None
-    text_html = None
-
-    def walk(part):
-        nonlocal text_plain, text_html
-        mime_type = part.get("mimeType", "")
-        body_data = part.get("body", {}).get("data")
-        if body_data:
-            decoded = base64.urlsafe_b64decode(body_data).decode("utf-8", errors="replace")
-            if mime_type == "text/plain" and text_plain is None:
-                text_plain = decoded
-            elif mime_type == "text/html" and text_html is None:
-                text_html = decoded
-        for sub in part.get("parts", []):
-            walk(sub)
-
-    walk(payload)
-    return text_plain, text_html
 
 
 def main():
@@ -82,11 +53,11 @@ def main():
     msg = service.users().messages().get(userId="me", id=messages[0]["id"], format="full").execute()
 
     headers = msg["payload"]["headers"]
-    subject = _get_header(headers, "Subject")
-    sender = _get_header(headers, "From")
-    date = _get_header(headers, "Date")
+    subject = get_header(headers, "Subject")
+    sender = get_header(headers, "From")
+    date = get_header(headers, "Date")
 
-    text_plain, text_html = _extract_body(msg["payload"])
+    text_plain, text_html = extract_bodies(msg["payload"])
 
     print(f"Subject: {subject}")
     print(f"From: {sender}")
