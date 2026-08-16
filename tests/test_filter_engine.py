@@ -93,6 +93,19 @@ def test_offer_wrong_contract_type_is_filtered():
     assert any("contract type" in r for r in result.reasons)
 
 
+def test_real_world_contract_type_text_matches_via_substring():
+    # Real enrichment extracts free text like "B2B, Permanent", not a clean
+    # "b2b" token — must match via substring, not exact equality.
+    result = evaluate(make_offer(employment_type="B2B, Permanent"), base_config(contract_types=["b2b"]))
+    assert result.matched is True
+
+
+def test_capitalized_seniority_matches_case_insensitively():
+    # Real enrichment extracts capitalized values like "Senior".
+    result = evaluate(make_offer(seniority="Senior"), base_config(seniority=["mid", "senior"]))
+    assert result.matched is True
+
+
 def test_empty_config_lists_mean_no_restriction():
     result = evaluate(
         make_offer(employment_type="uop", seniority="junior", location="Gdansk", remote_type="onsite"),

@@ -22,11 +22,20 @@ def evaluate(offer: Offer, config: FilterConfig) -> MatchResult:
     if config.excluded_companies and offer.company in config.excluded_companies:
         reasons.append(f"excluded company: {offer.company}")
 
-    if config.contract_types and (offer.employment_type or "") not in config.contract_types:
-        reasons.append(f"contract type '{offer.employment_type}' not in {config.contract_types}")
+    if config.contract_types:
+        # Real extracted values are free text like "B2B, Permanent" or
+        # "B2B Contract", not a clean "b2b" token — substring match, not
+        # equality, or a filters.yaml entry of "b2b" would never match.
+        offer_contract_lower = (offer.employment_type or "").lower()
+        contract_matches = any(ct.lower() in offer_contract_lower for ct in config.contract_types)
+        if not contract_matches:
+            reasons.append(f"contract type '{offer.employment_type}' doesn't match any of {config.contract_types}")
 
-    if config.seniority and (offer.seniority or "") not in config.seniority:
-        reasons.append(f"seniority '{offer.seniority}' not in {config.seniority}")
+    if config.seniority:
+        # Extracted values are capitalized ("Senior") — compare case-insensitively.
+        seniority_lower = (offer.seniority or "").lower()
+        if seniority_lower not in [s.lower() for s in config.seniority]:
+            reasons.append(f"seniority '{offer.seniority}' not in {config.seniority}")
 
     if config.salary_floor is not None:
         best_salary = offer.salary_max if offer.salary_max is not None else offer.salary_min
