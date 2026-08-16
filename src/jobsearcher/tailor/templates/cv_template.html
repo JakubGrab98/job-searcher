@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>{{ candidate.name }} CV</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    margin: 0;
+    color: #222;
+    font-size: 11.5px;
+  }
+  .header {
+    background: #16233b;
+    color: #ffffff;
+    padding: 28px 32px 22px 32px;
+  }
+  .header h1 {
+    margin: 0;
+    font-size: 26px;
+    letter-spacing: 1px;
+    font-weight: bold;
+  }
+  .header .headline {
+    font-size: 12px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    opacity: 0.85;
+    margin-top: 4px;
+  }
+  .header .contact {
+    margin-top: 14px;
+    font-size: 11.5px;
+  }
+  .header .contact span {
+    margin-right: 24px;
+  }
+  .container {
+    display: flex;
+  }
+  .main {
+    width: 66%;
+    padding: 20px 26px;
+  }
+  .sidebar {
+    width: 34%;
+    background: #f4f6f9;
+    padding: 20px 18px;
+  }
+  .section-title {
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #16233b;
+    font-weight: bold;
+    margin: 0 0 8px 0;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #d8dde5;
+  }
+  .main .section-title { margin-top: 18px; }
+  .main .section-title:first-child { margin-top: 0; }
+  .summary { line-height: 1.5; margin-bottom: 4px; }
+  .role { margin-bottom: 14px; }
+  .role-top { display: flex; justify-content: space-between; align-items: baseline; }
+  .role-title { font-weight: bold; font-size: 13px; }
+  .role-dates { font-size: 10.5px; color: #777; white-space: nowrap; }
+  .role-company { color: #555; font-size: 11.5px; margin-bottom: 4px; }
+  ul.bullets { margin: 4px 0 0 0; padding-left: 16px; }
+  ul.bullets li { margin-bottom: 4px; line-height: 1.4; }
+  .edu-item, .cert-item { margin-bottom: 8px; }
+  .edu-degree, .cert-name { font-weight: bold; font-size: 12px; }
+  .edu-meta, .cert-meta { color: #666; font-size: 10.5px; }
+  .consent { font-size: 8.5px; color: #999; margin-top: 16px; font-style: italic; }
+
+  .sidebar .section-title { margin-top: 20px; }
+  .sidebar .section-title:first-child { margin-top: 0; }
+  .skill { margin-bottom: 10px; }
+  .skill-name { font-size: 11px; margin-bottom: 3px; }
+  .skill-bar-bg { background: #dfe4ea; height: 5px; border-radius: 3px; overflow: hidden; }
+  .skill-bar-fill { background: #16233b; height: 5px; }
+  .plain-skill { font-size: 11px; margin-bottom: 6px; }
+  .lang-item { font-size: 11px; margin-bottom: 4px; }
+  .pill { display: inline-block; background: #e2e8f0; border-radius: 10px; padding: 3px 10px; font-size: 10px; margin: 0 4px 4px 0; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <h1>{{ candidate.name }}</h1>
+    <div class="headline">{{ candidate.headline }}</div>
+    <div class="contact">
+      {% if candidate.contact and candidate.contact.email %}<span>{{ candidate.contact.email }}</span>{% endif %}
+      {% if candidate.contact and candidate.contact.phone %}<span>{{ candidate.contact.phone }}</span>{% endif %}
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="main">
+      {% if summary %}
+      <div class="section-title">Summary</div>
+      <p class="summary">{{ summary }}</p>
+      {% endif %}
+
+      {% if experience %}
+      <div class="section-title">Experience</div>
+      {% for role in experience %}
+      <div class="role">
+        <div class="role-top">
+          <span class="role-title">{{ role.role }}</span>
+          <span class="role-dates">{{ role.dates }}</span>
+        </div>
+        <div class="role-company">{{ role.company }}{% if role.team %} &middot; {{ role.team }}{% endif %}</div>
+        {% if role.bullets %}
+        <ul class="bullets">
+          {% for bullet in role.bullets %}
+          <li>{{ bullet }}</li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+      </div>
+      {% endfor %}
+      {% endif %}
+
+      {% if education %}
+      <div class="section-title">Education</div>
+      {% for edu in education %}
+      <div class="edu-item">
+        <div class="edu-degree">{{ edu.degree }}</div>
+        <div class="edu-meta">{{ edu.institution }} &middot; {{ edu.dates }}</div>
+      </div>
+      {% endfor %}
+      {% endif %}
+
+      {% if certifications %}
+      <div class="section-title">Certifications</div>
+      {% for cert in certifications %}
+      <div class="cert-item">
+        <span class="cert-name">{{ cert.name }}</span>
+        <span class="cert-meta"> &middot; {{ cert.date }}</span>
+      </div>
+      {% endfor %}
+      {% endif %}
+
+      <p class="consent">I hereby give consent for my personal data to be processed for the purpose of conducting recruitment for the position for which I am applying.</p>
+    </div>
+
+    <div class="sidebar">
+      {% if skills %}
+      <div class="section-title">Core Skills</div>
+      {% for skill in skills %}
+        {% if skill.proficiency %}
+        <div class="skill">
+          <div class="skill-name">{{ skill.name }}</div>
+          <div class="skill-bar-bg"><div class="skill-bar-fill" style="width: {{ skill.proficiency }}%;"></div></div>
+        </div>
+        {% else %}
+        <div class="plain-skill">{{ skill.name }}</div>
+        {% endif %}
+      {% endfor %}
+      {% endif %}
+
+      {% if candidate.languages %}
+      <div class="section-title">Languages</div>
+      {% for lang in candidate.languages %}
+      <div class="lang-item">{{ lang.name }}</div>
+      {% endfor %}
+      {% endif %}
+
+      {% if candidate.interests %}
+      <div class="section-title">Interests</div>
+      <div>
+        {% for interest in candidate.interests %}
+        <span class="pill">{{ interest }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</body>
+</html>

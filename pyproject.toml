@@ -11,6 +11,7 @@ dependencies = [
     "google-api-python-client>=2.130",
     "beautifulsoup4>=4.12",
     "playwright>=1.45",
+    "Jinja2>=3.1",
 ]
 
 [project.optional-dependencies]
@@ -26,4 +27,4 @@ build-backend = "setuptools.build_meta"
 where = ["src"]
 
 [tool.setuptools.package-data]
-jobsearcher = ["db/schema.sql"]
+jobsearcher = ["db/schema.sql", "tailor/templates/*.html"]

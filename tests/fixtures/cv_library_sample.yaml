@@ -1,0 +1,52 @@
+candidate:
+  name: "Jane Example"
+  headline: "Data Engineer"
+  contact:
+    email: "jane@example.com"
+    phone: "+1 555 0100"
+  languages:
+    - name: "English"
+  interests: ["Chess", "Hiking"]
+
+education:
+  - degree: "BSc, Computer Science"
+    institution: "Example University"
+    dates: "2018 - 2022"
+    tags: ["education"]
+
+certifications:
+  - name: "Example Cert"
+    date: "2024"
+    tags: ["cert"]
+
+summaries:
+  general_data_engineer:
+    text: "Example summary text for a data engineer."
+    tags: ["general"]
+
+experience:
+  - company: "Example Corp"
+    team: "Data Team"
+    role: "Data Engineer"
+    dates: "2023 - present"
+    bullets:
+      - text: "Built an ETL pipeline moving data from Postgres to Snowflake."
+        tags: [etl, snowflake]
+      - text: "Delivered ELT pipelines with dbt and CI/CD as standard practice."
+        tags: [elt, dbt, ci_cd]
+        variant_of: "etl_bullet"
+
+personal_projects:
+  - name: "Example Project"
+    description: "A personal ETL project."
+    stack: ["Python", "Airflow"]
+    tags: ["personal_project"]
+    link: "github.com/example"
+
+skills:
+  - name: "Python"
+    proficiency: 80
+    tags: ["python"]
+  - name: "SQL"
+    proficiency: 85
+    tags: ["sql"]
