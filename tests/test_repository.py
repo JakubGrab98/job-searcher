@@ -9,6 +9,7 @@ from jobsearcher.db.repository import (
     update_offer_status,
     list_offers_by_status,
     insert_cv_version,
+    get_cv_version_by_offer,
     insert_application,
 )
 
@@ -100,9 +101,11 @@ def test_insert_cv_version_and_application(conn):
             id=None,
             offer_id=offer_id,
             generated_at=now,
-            file_path="generated_cvs/2026-08-15_acme_data-engineer_v1.pdf",
+            local_file_path="generated_cvs/2026-08-15_acme_data-engineer_v1.pdf",
+            drive_file_id="drive-file-1",
+            drive_web_view_link="https://drive.google.com/file/d/drive-file-1/view",
             bullet_ids_used=["example-1"],
-            llm_model_used="claude-sonnet-5",
+            llm_model_used="claude-haiku-4-5",
         ),
     )
     assert cv_id is not None
@@ -120,3 +123,38 @@ def test_insert_cv_version_and_application(conn):
         ),
     )
     assert app_id is not None
+
+
+def test_get_cv_version_by_offer_returns_none_when_not_tailored_yet(conn):
+    offer_id = insert_offer(conn, make_offer())
+    assert get_cv_version_by_offer(conn, offer_id) is None
+
+
+def test_get_cv_version_by_offer_finds_existing_version(conn):
+    offer_id = insert_offer(conn, make_offer())
+    now = datetime.now(timezone.utc).isoformat()
+    insert_cv_version(
+        conn,
+        CvVersion(
+            id=None, offer_id=offer_id, generated_at=now,
+            local_file_path="generated_cvs/x.pdf", bullet_ids_used=[], llm_model_used="claude-haiku-4-5",
+        ),
+    )
+    found = get_cv_version_by_offer(conn, offer_id)
+    assert found is not None
+    assert found.offer_id == offer_id
+
+
+def test_get_cv_version_by_offer_returns_latest_when_multiple_exist(conn):
+    offer_id = insert_offer(conn, make_offer())
+    now = datetime.now(timezone.utc).isoformat()
+    insert_cv_version(
+        conn,
+        CvVersion(id=None, offer_id=offer_id, generated_at=now, local_file_path="v1.pdf", bullet_ids_used=[]),
+    )
+    insert_cv_version(
+        conn,
+        CvVersion(id=None, offer_id=offer_id, generated_at=now, local_file_path="v2.pdf", bullet_ids_used=[]),
+    )
+    found = get_cv_version_by_offer(conn, offer_id)
+    assert found.local_file_path == "v2.pdf"

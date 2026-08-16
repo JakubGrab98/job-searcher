@@ -24,7 +24,9 @@ CREATE TABLE IF NOT EXISTS cv_versions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     offer_id INTEGER NOT NULL REFERENCES offers(id),
     generated_at TEXT NOT NULL,
-    file_path TEXT NOT NULL,
+    local_file_path TEXT NOT NULL,
+    drive_file_id TEXT,
+    drive_web_view_link TEXT,
     bullet_ids_used TEXT NOT NULL DEFAULT '[]',
     llm_model_used TEXT
 );

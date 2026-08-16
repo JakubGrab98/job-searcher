@@ -29,7 +29,9 @@ class CvVersion:
     id: int | None
     offer_id: int
     generated_at: str
-    file_path: str
+    local_file_path: str
+    drive_file_id: str | None = None
+    drive_web_view_link: str | None = None
     bullet_ids_used: list[str] = field(default_factory=list)
     llm_model_used: str | None = None
 

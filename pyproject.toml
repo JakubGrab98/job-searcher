@@ -12,6 +12,7 @@ dependencies = [
     "beautifulsoup4>=4.12",
     "playwright>=1.45",
     "Jinja2>=3.1",
+    "anthropic>=0.40",
 ]
 
 [project.optional-dependencies]

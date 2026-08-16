@@ -115,16 +115,43 @@ def list_offers_by_status(conn: sqlite3.Connection, status: str) -> list[Offer]:
     return [_row_to_offer(row) for row in rows]
 
 
+def _row_to_cv_version(row: sqlite3.Row) -> CvVersion:
+    return CvVersion(
+        id=row["id"],
+        offer_id=row["offer_id"],
+        generated_at=row["generated_at"],
+        local_file_path=row["local_file_path"],
+        drive_file_id=row["drive_file_id"],
+        drive_web_view_link=row["drive_web_view_link"],
+        bullet_ids_used=json.loads(row["bullet_ids_used"]),
+        llm_model_used=row["llm_model_used"],
+    )
+
+
 def insert_cv_version(conn: sqlite3.Connection, cv: CvVersion) -> int:
     cursor = conn.execute(
         """
-        INSERT INTO cv_versions (offer_id, generated_at, file_path, bullet_ids_used, llm_model_used)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO cv_versions (
+            offer_id, generated_at, local_file_path, drive_file_id,
+            drive_web_view_link, bullet_ids_used, llm_model_used
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)
         """,
-        (cv.offer_id, cv.generated_at, cv.file_path, json.dumps(cv.bullet_ids_used), cv.llm_model_used),
+        (
+            cv.offer_id, cv.generated_at, cv.local_file_path, cv.drive_file_id,
+            cv.drive_web_view_link, json.dumps(cv.bullet_ids_used), cv.llm_model_used,
+        ),
     )
     conn.commit()
     return cursor.lastrowid
+
+
+def get_cv_version_by_offer(conn: sqlite3.Connection, offer_id: int) -> CvVersion | None:
+    """Used to skip re-tailoring an offer that already has a CV version —
+    the whole point being to never spend LLM credits twice on the same offer."""
+    row = conn.execute(
+        "SELECT * FROM cv_versions WHERE offer_id = ? ORDER BY id DESC LIMIT 1", (offer_id,)
+    ).fetchone()
+    return _row_to_cv_version(row) if row else None
 
 
 def insert_application(conn: sqlite3.Connection, app: Application) -> int:
