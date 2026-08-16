@@ -10,6 +10,7 @@ from googleapiclient.discovery import build
 SCOPES = [
     "https://www.googleapis.com/auth/gmail.modify",
     "https://www.googleapis.com/auth/gmail.send",
+    "https://www.googleapis.com/auth/drive.file",
 ]
 
 
@@ -39,10 +40,18 @@ def get_credentials(client_secrets_path: str, token_path: str, ca_bundle_path: s
     return creds
 
 
-def get_gmail_service(client_secrets_path: str, token_path: str, ca_bundle_path: str | None = None):
+def _build_service(service_name: str, version: str, client_secrets_path: str, token_path: str, ca_bundle_path: str | None):
     creds = get_credentials(client_secrets_path, token_path, ca_bundle_path)
-    # The actual Gmail API calls go through httplib2, which does NOT read
+    # The actual API calls go through httplib2, which does NOT read
     # REQUESTS_CA_BUNDLE — it needs its own ca_certs passed explicitly.
     http = httplib2.Http(ca_certs=ca_bundle_path) if ca_bundle_path else httplib2.Http()
     authorized_http = AuthorizedHttp(creds, http=http)
-    return build("gmail", "v1", http=authorized_http)
+    return build(service_name, version, http=authorized_http)
+
+
+def get_gmail_service(client_secrets_path: str, token_path: str, ca_bundle_path: str | None = None):
+    return _build_service("gmail", "v1", client_secrets_path, token_path, ca_bundle_path)
+
+
+def get_drive_service(client_secrets_path: str, token_path: str, ca_bundle_path: str | None = None):
+    return _build_service("drive", "v3", client_secrets_path, token_path, ca_bundle_path)
