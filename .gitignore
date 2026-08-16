@@ -15,3 +15,8 @@ config/cv_library.yaml
 
 # Google OAuth client secret + stored token — real credentials, never commit.
 secrets/
+
+# Real personal documents/samples containing PII (name, email, phone, raw
+# email headers) — not source, stay local-only.
+mail_example.html
+docs/superpowers/plans/CV_JakubGrabarczyk_ENG.pdf
