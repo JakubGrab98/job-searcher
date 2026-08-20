@@ -35,6 +35,13 @@ experience:
       - text: "Delivered ELT pipelines with dbt and CI/CD as standard practice."
         tags: [elt, dbt, ci_cd]
         variant_of: "etl_bullet"
+  - company: "Example Corp"
+    team: "Analyst Team"
+    role: "Junior Analyst"
+    dates: "2021 - 2023"
+    bullets:
+      - text: "Built dashboards in Tableau for weekly reporting."
+        tags: [tableau, bi]
 
 personal_projects:
   - name: "Example Project"

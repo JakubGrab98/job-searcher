@@ -1,4 +1,4 @@
-from jobsearcher.db.models import Offer
+from jobsearcher.db.models import CvVersion, Offer
 from jobsearcher.filter.engine import MatchResult
 from jobsearcher.notify.notification import build_match_notification
 
@@ -61,3 +61,18 @@ def test_body_handles_unknown_salary_gracefully():
     offer = make_offer(salary_min=None, salary_max=None, currency=None)
     _, body = build_match_notification(offer, MatchResult(matched=True, matched_criteria=[]))
     assert "Undisclosed" in body or "unknown" in body.lower()
+
+
+def test_body_includes_cv_link_when_tailored():
+    cv = CvVersion(
+        id=1, offer_id=1, generated_at="2026-08-20T00:00:00+00:00",
+        local_file_path="generated_cvs/x.pdf",
+        drive_web_view_link="https://drive.google.com/file/d/abc123/view",
+    )
+    _, body = build_match_notification(make_offer(), MatchResult(matched=True, matched_criteria=[]), cv_version=cv)
+    assert "https://drive.google.com/file/d/abc123/view" in body
+
+
+def test_body_notes_when_cv_not_yet_available():
+    _, body = build_match_notification(make_offer(), MatchResult(matched=True, matched_criteria=[]), cv_version=None)
+    assert "not" in body.lower() or "pending" in body.lower()

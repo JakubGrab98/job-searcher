@@ -1,6 +1,6 @@
 import os
 
-from jobsearcher.tailor.cv_library import get_bullet_by_id, load_cv_library
+from jobsearcher.tailor.cv_library import get_bullet_by_id, get_role_by_id, load_cv_library
 
 FIXTURE_PATH = os.path.join(os.path.dirname(__file__), "fixtures", "cv_library_sample.yaml")
 
@@ -35,3 +35,25 @@ def test_get_bullet_by_id_finds_bullet():
 def test_get_bullet_by_id_returns_none_when_not_found():
     library = load_cv_library(FIXTURE_PATH)
     assert get_bullet_by_id(library, "nonexistent") is None
+
+
+def test_roles_sharing_a_company_get_distinct_ids():
+    # The fixture has two "Example Corp" roles (Data Engineer, Junior
+    # Analyst) — company name alone can't disambiguate them.
+    library = load_cv_library(FIXTURE_PATH)
+    roles = library["experience"]
+    assert roles[0]["company"] == roles[1]["company"] == "Example Corp"
+    assert roles[0]["id"] != roles[1]["id"]
+
+
+def test_get_role_by_id_finds_correct_role_despite_shared_company_name():
+    library = load_cv_library(FIXTURE_PATH)
+    target_id = library["experience"][1]["id"]
+    role = get_role_by_id(library, target_id)
+    assert role is not None
+    assert role["role"] == "Junior Analyst"
+
+
+def test_get_role_by_id_returns_none_when_not_found():
+    library = load_cv_library(FIXTURE_PATH)
+    assert get_role_by_id(library, "nonexistent") is None

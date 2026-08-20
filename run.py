@@ -8,16 +8,20 @@ Run: .venv/Scripts/python.exe run.py
 
 import os
 
+import anthropic
+import httpx
 from dotenv import load_dotenv
 from playwright.sync_api import sync_playwright
 
 from jobsearcher.db.database import connect, init_db
 from jobsearcher.enrich.enrichment import enrich_offer
 from jobsearcher.filter.config import load_filter_config
-from jobsearcher.gmail.auth import get_gmail_service
+from jobsearcher.gmail.auth import get_drive_service, get_gmail_service
 from jobsearcher.gmail.send import send_email
 from jobsearcher.notify.notification import build_match_notification
 from jobsearcher.pipeline import run_once
+from jobsearcher.tailor.cv_library import load_cv_library
+from jobsearcher.tailor.tailor import tailor_cv_for_offer
 
 load_dotenv()
 
@@ -34,8 +38,17 @@ def main():
     token_path = os.environ["GOOGLE_OAUTH_TOKEN_PATH"]
     ca_bundle_path = os.environ.get("CA_BUNDLE_PATH") or None
     gmail_service = get_gmail_service(client_secrets_path, token_path, ca_bundle_path)
+    drive_service = get_drive_service(client_secrets_path, token_path, ca_bundle_path)
 
     notify_email = os.environ["NOTIFY_EMAIL"]
+
+    # anthropic's SDK uses httpx, which has its own cert handling separate
+    # from requests (used by the Gmail/Drive OAuth token exchange) and
+    # httplib2 (used by the actual Gmail/Drive API calls) — same
+    # TLS-intercepting-AV story as those, needs its own verify= override.
+    http_client = httpx.Client(verify=ca_bundle_path) if ca_bundle_path else None
+    anthropic_client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"], http_client=http_client)
+    cv_library = load_cv_library("config/cv_library.yaml")
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
@@ -48,11 +61,14 @@ def main():
             finally:
                 page.close()
 
-        def send_notification_fn(offer, match_result):
-            subject, body = build_match_notification(offer, match_result)
+        def tailor_fn(conn, offer):
+            return tailor_cv_for_offer(anthropic_client, drive_service, cv_library, conn, offer)
+
+        def send_notification_fn(offer, match_result, cv_version):
+            subject, body = build_match_notification(offer, match_result, cv_version)
             send_email(gmail_service, notify_email, subject, body)
 
-        stats = run_once(conn, gmail_service, enrich_fn, filter_config, send_notification_fn)
+        stats = run_once(conn, gmail_service, enrich_fn, filter_config, tailor_fn, send_notification_fn)
 
         browser.close()
 

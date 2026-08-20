@@ -42,12 +42,13 @@ def test_build_selection_prompt_includes_real_bullet_ids_for_selection():
 
 def test_parse_selection_response_resolves_bullet_ids_to_selection():
     library = load_cv_library(FIXTURE_PATH)
+    role_id = library["experience"][0]["id"]
     bullet_id = library["experience"][0]["bullets"][0]["id"]
 
     response_json = json.dumps(
         {
             "summary_key": "general_data_engineer",
-            "experience": [{"company": "Example Corp", "bullet_ids": [bullet_id]}],
+            "experience": [{"role_id": role_id, "bullet_ids": [bullet_id]}],
             "skill_names": ["Python"],
         }
     )
@@ -59,11 +60,40 @@ def test_parse_selection_response_resolves_bullet_ids_to_selection():
     assert selection.skill_names == ["Python"]
 
 
+def test_parse_selection_response_disambiguates_roles_sharing_a_company():
+    # Regression: two roles at "Example Corp" — a company-name lookup
+    # would collapse both onto the same (wrong) role.
+    library = load_cv_library(FIXTURE_PATH)
+    first_role_id = library["experience"][0]["id"]
+    second_role_id = library["experience"][1]["id"]
+    first_bullet_id = library["experience"][0]["bullets"][0]["id"]
+    second_bullet_id = library["experience"][1]["bullets"][0]["id"]
+
+    response_json = json.dumps(
+        {
+            "summary_key": "general_data_engineer",
+            "experience": [
+                {"role_id": first_role_id, "bullet_ids": [first_bullet_id]},
+                {"role_id": second_role_id, "bullet_ids": [second_bullet_id]},
+            ],
+            "skill_names": [],
+        }
+    )
+    selection = parse_selection_response(response_json, library)
+
+    assert len(selection.experience) == 2
+    assert selection.experience[0].role == "Data Engineer"
+    assert selection.experience[0].bullet_ids == [first_bullet_id]
+    assert selection.experience[1].role == "Junior Analyst"
+    assert selection.experience[1].bullet_ids == [second_bullet_id]
+
+
 def test_parse_selection_response_handles_markdown_code_fence():
     library = load_cv_library(FIXTURE_PATH)
+    role_id = library["experience"][0]["id"]
     bullet_id = library["experience"][0]["bullets"][0]["id"]
     wrapped = "```json\n" + json.dumps(
-        {"summary_key": "general_data_engineer", "experience": [{"company": "Example Corp", "bullet_ids": [bullet_id]}], "skill_names": []}
+        {"summary_key": "general_data_engineer", "experience": [{"role_id": role_id, "bullet_ids": [bullet_id]}], "skill_names": []}
     ) + "\n```"
 
     selection = parse_selection_response(wrapped, library)
@@ -72,12 +102,13 @@ def test_parse_selection_response_handles_markdown_code_fence():
 
 def test_parse_selection_response_drops_invented_bullet_ids():
     library = load_cv_library(FIXTURE_PATH)
+    role_id = library["experience"][0]["id"]
     real_id = library["experience"][0]["bullets"][0]["id"]
 
     response_json = json.dumps(
         {
             "summary_key": "general_data_engineer",
-            "experience": [{"company": "Example Corp", "bullet_ids": [real_id, "made-up-id-999"]}],
+            "experience": [{"role_id": role_id, "bullet_ids": [real_id, "made-up-id-999"]}],
             "skill_names": [],
         }
     )
@@ -86,6 +117,15 @@ def test_parse_selection_response_drops_invented_bullet_ids():
     # Guardrail: never trust a bullet id that isn't a real id from the
     # library — that would mean rendering text that doesn't exist in it.
     assert selection.experience[0].bullet_ids == [real_id]
+
+
+def test_parse_selection_response_skips_unrecognized_role_id():
+    library = load_cv_library(FIXTURE_PATH)
+    response_json = json.dumps(
+        {"summary_key": "general_data_engineer", "experience": [{"role_id": "made-up-role", "bullet_ids": []}], "skill_names": []}
+    )
+    selection = parse_selection_response(response_json, library)
+    assert selection.experience == []
 
 
 class _FakeContentBlock:
@@ -115,9 +155,10 @@ class _FakeAnthropicClient:
 
 def test_select_bullets_for_offer_uses_cheap_model_and_capped_tokens():
     library = load_cv_library(FIXTURE_PATH)
+    role_id = library["experience"][0]["id"]
     bullet_id = library["experience"][0]["bullets"][0]["id"]
     response_text = json.dumps(
-        {"summary_key": "general_data_engineer", "experience": [{"company": "Example Corp", "bullet_ids": [bullet_id]}], "skill_names": ["Python"]}
+        {"summary_key": "general_data_engineer", "experience": [{"role_id": role_id, "bullet_ids": [bullet_id]}], "skill_names": ["Python"]}
     )
     client = _FakeAnthropicClient(response_text)
 

@@ -1,4 +1,4 @@
-from jobsearcher.db.models import Offer
+from jobsearcher.db.models import CvVersion, Offer
 from jobsearcher.filter.engine import MatchResult
 
 
@@ -13,11 +13,18 @@ def _format_salary(offer: Offer) -> str:
     return f"{amount} {currency}".strip()
 
 
-def build_match_notification(offer: Offer, match_result: MatchResult) -> tuple[str, str]:
+def build_match_notification(
+    offer: Offer, match_result: MatchResult, cv_version: CvVersion | None = None
+) -> tuple[str, str]:
     """Returns (subject, body) for a new-match notification email."""
     subject = f"[job-searcher] New match: {offer.title} at {offer.company}"
 
     criteria_line = ", ".join(match_result.matched_criteria) if match_result.matched_criteria else "(none recorded)"
+
+    if cv_version is not None:
+        cv_line = cv_version.drive_web_view_link or cv_version.local_file_path
+    else:
+        cv_line = "not available yet (tailoring pending or failed — check the logs)"
 
     body = (
         f"New matching offer found:\n\n"
@@ -28,7 +35,8 @@ def build_match_notification(offer: Offer, match_result: MatchResult) -> tuple[s
         f"Seniority: {offer.seniority or 'unknown'}\n"
         f"Apply type: {offer.apply_type or 'unknown'}\n\n"
         f"Link: {offer.url}\n\n"
-        f"Matched criteria: {criteria_line}\n"
+        f"Matched criteria: {criteria_line}\n\n"
+        f"Tailored CV: {cv_line}\n"
     )
 
     return subject, body

@@ -105,6 +105,14 @@ def _filter_config():
     return FilterConfig(role_keywords=["data engineer"], contract_types=["b2b"])
 
 
+def _fake_tailor(conn, offer):
+    return "fake-cv-version"
+
+
+def _failing_tailor(conn, offer):
+    raise RuntimeError("LLM call failed")
+
+
 @pytest.fixture
 def sent_emails():
     return []
@@ -113,13 +121,17 @@ def sent_emails():
 def test_run_once_notifies_for_matching_offer(conn, sent_emails):
     service = _make_gmail_service()
 
-    def fake_send(offer, match_result):
-        sent_emails.append((offer.title, match_result.matched_criteria))
+    def fake_send(offer, match_result, cv_version):
+        sent_emails.append((offer.title, match_result.matched_criteria, cv_version))
 
-    stats = run_once(conn, service, _enrich_matching, _filter_config(), fake_send)
+    stats = run_once(conn, service, _enrich_matching, _filter_config(), _fake_tailor, fake_send)
 
-    assert stats == {"ingested": 1, "enriched": 1, "matched": 1, "filtered_out": 0, "notified": 1, "enrichment_failed": 0}
+    assert stats == {
+        "ingested": 1, "enriched": 1, "matched": 1, "filtered_out": 0,
+        "tailored": 1, "tailoring_failed": 0, "notified": 1, "enrichment_failed": 0,
+    }
     assert len(sent_emails) == 1
+    assert sent_emails[0][2] == "fake-cv-version"
     offer = get_offer(conn, 1)
     assert offer.status == "notified"
 
@@ -127,10 +139,10 @@ def test_run_once_notifies_for_matching_offer(conn, sent_emails):
 def test_run_once_does_not_notify_for_non_matching_offer(conn, sent_emails):
     service = _make_gmail_service()
 
-    def fake_send(offer, match_result):
+    def fake_send(offer, match_result, cv_version):
         sent_emails.append(offer.title)
 
-    stats = run_once(conn, service, _enrich_non_matching, _filter_config(), fake_send)
+    stats = run_once(conn, service, _enrich_non_matching, _filter_config(), _fake_tailor, fake_send)
 
     assert stats["matched"] == 0
     assert stats["filtered_out"] == 1
@@ -147,7 +159,7 @@ def test_run_once_marks_offer_failed_when_enrichment_raises(conn):
     def failing_enrich(conn, offer_id, url):
         raise RuntimeError("Playwright navigation timeout")
 
-    stats = run_once(conn, service, failing_enrich, _filter_config(), lambda o, r: None)
+    stats = run_once(conn, service, failing_enrich, _filter_config(), _fake_tailor, lambda o, r, c: None)
 
     assert stats["enrichment_failed"] == 1
     assert stats["enriched"] == 0
@@ -155,7 +167,26 @@ def test_run_once_marks_offer_failed_when_enrichment_raises(conn):
     assert offer.status == "failed"
 
 
+def test_run_once_still_notifies_when_tailoring_fails(conn, sent_emails):
+    service = _make_gmail_service()
+
+    def fake_send(offer, match_result, cv_version):
+        sent_emails.append(cv_version)
+
+    stats = run_once(conn, service, _enrich_matching, _filter_config(), _failing_tailor, fake_send)
+
+    assert stats["tailoring_failed"] == 1
+    assert stats["tailored"] == 0
+    assert stats["notified"] == 1  # still notified about the match despite the tailoring failure
+    assert sent_emails == [None]
+    offer = get_offer(conn, 1)
+    assert offer.status == "notified"
+
+
 def test_run_once_is_a_noop_when_no_new_offers(conn):
     service = _FakeGmailService(_FakeMessages({"messages": []}, {}))
-    stats = run_once(conn, service, _enrich_matching, _filter_config(), lambda o, r: None)
-    assert stats == {"ingested": 0, "enriched": 0, "matched": 0, "filtered_out": 0, "notified": 0, "enrichment_failed": 0}
+    stats = run_once(conn, service, _enrich_matching, _filter_config(), _fake_tailor, lambda o, r, c: None)
+    assert stats == {
+        "ingested": 0, "enriched": 0, "matched": 0, "filtered_out": 0,
+        "tailored": 0, "tailoring_failed": 0, "notified": 0, "enrichment_failed": 0,
+    }

@@ -1,7 +1,7 @@
 import json
 import re
 
-from jobsearcher.tailor.cv_library import get_bullet_by_id
+from jobsearcher.tailor.cv_library import get_bullet_by_id, get_role_by_id
 from jobsearcher.tailor.selection import CvSelection, SelectedExperience
 
 # Cheapest current model capable of this structured selection/light-rephrase
@@ -17,6 +17,7 @@ def _serialize_candidate_profile(library: dict) -> str:
     summaries = {key: val["text"] for key, val in library.get("summaries", {}).items()}
     experience = [
         {
+            "role_id": role["id"],
             "company": role["company"],
             "role": role["role"],
             "dates": role["dates"],
@@ -55,8 +56,10 @@ def build_selection_prompt(
         f"Description: {offer_description}\n\n"
         "Select the best-fitting summary key, up to 5 most relevant bullet ids per "
         "role (fewer for less relevant or older roles), and up to 8 relevant skill "
-        "names. Respond with ONLY a JSON object of this exact shape, no other text:\n"
-        '{"summary_key": "...", "experience": [{"company": "...", "bullet_ids": ["..."]}], '
+        "names. Identify each role by its role_id (some roles share a company name, "
+        "so role_id — not company — is what disambiguates them). Respond with ONLY "
+        "a JSON object of this exact shape, no other text:\n"
+        '{"summary_key": "...", "experience": [{"role_id": "...", "bullet_ids": ["..."]}], '
         '"skill_names": ["..."]}'
     )
 
@@ -75,19 +78,23 @@ def parse_selection_response(response_text: str, library: dict) -> CvSelection:
         cleaned = re.sub(r"\n```$", "", cleaned)
 
     data = json.loads(cleaned)
-    experience_by_company = {role["company"]: role for role in library.get("experience", [])}
 
     selected_experience = []
     for exp in data.get("experience", []):
-        company = exp["company"]
-        role_info = experience_by_company.get(company, {})
+        role_info = get_role_by_id(library, exp.get("role_id", ""))
+        if role_info is None:
+            # Guardrail: an unrecognized role_id means we can't safely
+            # attribute these bullets to a specific role — skip rather
+            # than guess (guessing is exactly what caused the original
+            # bug: bullets landing under the wrong role).
+            continue
         # Guardrail: drop any bullet id that isn't a real id from the
         # library — rendering one would mean displaying text that doesn't
         # exist in the truthful source, exactly what this can't do.
         valid_ids = [bid for bid in exp.get("bullet_ids", []) if get_bullet_by_id(library, bid) is not None]
         selected_experience.append(
             SelectedExperience(
-                company=company,
+                company=role_info["company"],
                 team=role_info.get("team"),
                 role=role_info.get("role", ""),
                 dates=role_info.get("dates", ""),
