@@ -47,3 +47,32 @@ def test_parse_offer_cards_urls_are_unique(sample_html):
     cards = parse_offer_cards(sample_html)
     urls = [c.url for c in cards]
     assert len(urls) == len(set(urls))
+
+
+def test_parse_offer_cards_handles_gmail_forwarding_class_prefix():
+    # Gmail forwarding prefixes every class with a message-scoped string
+    # (e.g. "company-name" -> "m_-4816130689228390770company-name") to
+    # avoid style collisions with the surrounding UI — confirmed against a
+    # real forwarded alert email. Fields must still resolve correctly.
+    html = """
+    <html><body>
+    Your preferences: <b>Data</b>
+    <a href="https://justjoin.it/job-offer/acme-data-engineer">
+      <p class="m_-123company-name">Acme</p>
+      <p class="m_-123company-city">Warszawa</p>
+      <p class="m_-123offer-title">Data Engineer</p>
+      <p class="m_-123salary">Undisclosed salary</p>
+      <td class="m_-123offer-details">Remote</td>
+      <td class="m_-123offer-details">B2B</td>
+      <td class="m_-123offer-details">Senior</td>
+    </a>
+    </body></html>
+    """
+    cards = parse_offer_cards(html)
+    assert len(cards) == 1
+    assert cards[0].company == "Acme"
+    assert cards[0].city == "Warszawa"
+    assert cards[0].title == "Data Engineer"
+    assert cards[0].work_mode == "Remote"
+    assert cards[0].contract_type == "B2B"
+    assert cards[0].seniority == "Senior"

@@ -19,7 +19,7 @@ secrets/
 # Real personal documents/samples containing PII (name, email, phone, raw
 # email headers) — not source, stay local-only.
 mail_example.html
-docs/superpowers/plans/CV_JakubGrabarczyk_ENG.pdf
-
+docs/superpowers/plans/
+personal/
 # Scratch dumps from one-off exploration scripts.
 scripts/_*

@@ -22,6 +22,22 @@ def _clean_offer_url(href: str) -> str:
     return href.split("?", 1)[0]
 
 
+def _class_suffix_matcher(suffix: str):
+    # Gmail forwarding prefixes every class with a message-scoped string
+    # (e.g. "company-name" -> "m_-4816130689228390770company-name") to
+    # avoid style collisions — matching by suffix handles both the
+    # original class name and any such prefixed variant.
+    return lambda c: c and c.endswith(suffix)
+
+
+def _find_by_class_suffix(parent, tag_name: str, suffix: str):
+    return parent.find(tag_name, class_=_class_suffix_matcher(suffix))
+
+
+def _find_all_by_class_suffix(parent, tag_name: str, suffix: str):
+    return parent.find_all(tag_name, class_=_class_suffix_matcher(suffix))
+
+
 def parse_category(html: str) -> str | None:
     soup = BeautifulSoup(html, "html.parser")
     for b_tag in soup.find_all("b"):
@@ -46,11 +62,11 @@ def parse_offer_cards(html: str) -> list[ParsedOfferCard]:
             continue
         seen_urls.add(url)
 
-        company_tag = link.find("p", class_="company-name")
-        city_tag = link.find("p", class_="company-city")
-        title_tag = link.find("p", class_="offer-title")
-        salary_tag = link.find("p", class_="salary")
-        detail_tags = link.find_all("td", class_="offer-details")
+        company_tag = _find_by_class_suffix(link, "p", "company-name")
+        city_tag = _find_by_class_suffix(link, "p", "company-city")
+        title_tag = _find_by_class_suffix(link, "p", "offer-title")
+        salary_tag = _find_by_class_suffix(link, "p", "salary")
+        detail_tags = _find_all_by_class_suffix(link, "td", "offer-details")
 
         salary_text = " ".join(salary_tag.get_text(" ", strip=True).split()) if salary_tag else ""
 
