@@ -128,18 +128,29 @@ Means the app is in **Production**, not Testing. Go to Audience → switch
 back to Testing, and make sure your account is listed under Test users.
 
 **`SSLCertVerificationError: unable to get local issuer certificate`**
-TLS-intercepting antivirus/proxy (this project hit it with Avast). Two
-libraries are involved and need to trust the interceptor's root cert
-separately:
-- `google-auth-oauthlib`'s token exchange goes through `requests`, which
-  honors `REQUESTS_CA_BUNDLE`.
-- The actual Gmail/Drive API calls go through `httplib2`, which does **not**
-  read `REQUESTS_CA_BUNDLE` — it needs `ca_certs` passed explicitly.
+TLS-intercepting antivirus/proxy (this project hit it with Avast). Three
+libraries are involved and each needs its own cert configuration:
+`requests` (OAuth token exchange, `REQUESTS_CA_BUNDLE`), `httplib2` (actual
+Gmail/Drive API calls, `ca_certs` param), and `httpx` (Anthropic SDK,
+`verify=` param) — none of them share config with each other.
 
-Both are already wired up in `src/jobsearcher/gmail/auth.py` via the
-`CA_BUNDLE_PATH` env var — just set it to your interceptor's root cert path
-(e.g. `C:\ProgramData\Avast Software\Avast\wscert.pem` for Avast) and both
-code paths pick it up.
+All three are wired up in `src/jobsearcher/gmail/auth.py` /
+`src/jobsearcher/ssl_utils.py` via the `CA_BUNDLE_PATH` env var — set it to
+your interceptor's root cert path (e.g.
+`C:\ProgramData\Avast Software\Avast\wscert.pem` for Avast).
+
+**Important**: don't trust the interceptor's cert *alone* — whether a given
+connection actually gets intercepted varies by execution context (confirmed
+live: works interactively, fails identically under Windows Task Scheduler,
+because that context's connections apparently aren't intercepted and hit
+the real Google certificate chain, which only the interceptor's root can't
+validate). `ssl_utils.build_combined_ca_bundle()` merges the standard
+public trust roots (via `certifi`) with the interceptor's cert into one
+bundle, which is what actually gets passed to all three libraries — covers
+both the intercepted and non-intercepted case regardless of context. If you
+see this error only in one context (e.g. only when scheduled, not
+interactively, or vice versa), that mismatch is exactly why — don't
+special-case it further, the combined bundle is the fix.
 
 **Adding a new scope later**
 1. Add the scope string to `SCOPES` in `src/jobsearcher/gmail/auth.py`.
