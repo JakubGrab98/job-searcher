@@ -1,6 +1,6 @@
 from jobsearcher.db.models import CvVersion, Offer
 from jobsearcher.filter.engine import MatchResult
-from jobsearcher.notify.notification import build_match_notification
+from jobsearcher.notify.notification import build_failure_alert, build_match_notification
 
 
 def make_offer(**overrides) -> Offer:
@@ -76,3 +76,15 @@ def test_body_includes_cv_link_when_tailored():
 def test_body_notes_when_cv_not_yet_available():
     _, body = build_match_notification(make_offer(), MatchResult(matched=True, matched_criteria=[]), cv_version=None)
     assert "not" in body.lower() or "pending" in body.lower()
+
+
+def test_failure_alert_includes_run_id_and_error():
+    subject, body = build_failure_alert("Playwright crashed: timeout", run_id=42)
+    assert "failed" in subject.lower()
+    assert "42" in body
+    assert "Playwright crashed: timeout" in body
+
+
+def test_failure_alert_handles_missing_run_id():
+    subject, body = build_failure_alert("Gmail auth expired")
+    assert "Gmail auth expired" in body

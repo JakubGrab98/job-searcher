@@ -41,3 +41,12 @@ CREATE TABLE IF NOT EXISTS applications (
     status TEXT NOT NULL,
     error_message TEXT
 );
+
+CREATE TABLE IF NOT EXISTS runs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    started_at TEXT NOT NULL,
+    finished_at TEXT,
+    status TEXT NOT NULL DEFAULT 'running',
+    stats TEXT,
+    error_message TEXT
+);

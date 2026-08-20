@@ -2,7 +2,7 @@ import json
 import sqlite3
 from datetime import datetime, timezone
 
-from jobsearcher.db.models import Offer, CvVersion, Application
+from jobsearcher.db.models import Offer, CvVersion, Application, Run
 
 
 def _row_to_offer(row: sqlite3.Row) -> Offer:
@@ -165,3 +165,52 @@ def insert_application(conn: sqlite3.Connection, app: Application) -> int:
     )
     conn.commit()
     return cursor.lastrowid
+
+
+def _row_to_run(row: sqlite3.Row) -> Run:
+    return Run(
+        id=row["id"],
+        started_at=row["started_at"],
+        finished_at=row["finished_at"],
+        status=row["status"],
+        stats=json.loads(row["stats"]) if row["stats"] else None,
+        error_message=row["error_message"],
+    )
+
+
+def start_run(conn: sqlite3.Connection) -> int:
+    """Records the start of a pipeline run — call once at the top of
+    run.py, before anything else, so even a crash before the first offer
+    is processed still leaves a 'running' row an alert can be built from."""
+    cursor = conn.execute(
+        "INSERT INTO runs (started_at, status) VALUES (?, ?)",
+        (datetime.now(timezone.utc).isoformat(), "running"),
+    )
+    conn.commit()
+    return cursor.lastrowid
+
+
+def finish_run(conn: sqlite3.Connection, run_id: int, stats: dict) -> None:
+    conn.execute(
+        "UPDATE runs SET finished_at = ?, status = ?, stats = ? WHERE id = ?",
+        (datetime.now(timezone.utc).isoformat(), "completed", json.dumps(stats), run_id),
+    )
+    conn.commit()
+
+
+def fail_run(conn: sqlite3.Connection, run_id: int, error_message: str) -> None:
+    conn.execute(
+        "UPDATE runs SET finished_at = ?, status = ?, error_message = ? WHERE id = ?",
+        (datetime.now(timezone.utc).isoformat(), "failed", error_message, run_id),
+    )
+    conn.commit()
+
+
+def get_run(conn: sqlite3.Connection, run_id: int) -> Run | None:
+    row = conn.execute("SELECT * FROM runs WHERE id = ?", (run_id,)).fetchone()
+    return _row_to_run(row) if row else None
+
+
+def list_recent_runs(conn: sqlite3.Connection, limit: int = 20) -> list[Run]:
+    rows = conn.execute("SELECT * FROM runs ORDER BY id DESC LIMIT ?", (limit,)).fetchall()
+    return [_row_to_run(row) for row in rows]

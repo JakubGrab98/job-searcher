@@ -46,3 +46,13 @@ class Application:
     method: str
     status: str
     error_message: str | None = None
+
+
+@dataclass
+class Run:
+    id: int | None
+    started_at: str
+    finished_at: str | None = None
+    status: str = "running"
+    stats: dict | None = None
+    error_message: str | None = None

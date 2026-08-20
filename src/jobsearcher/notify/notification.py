@@ -40,3 +40,23 @@ def build_match_notification(
     )
 
     return subject, body
+
+
+def build_failure_alert(error_message: str, run_id: int | None = None) -> tuple[str, str]:
+    """Returns (subject, body) for a whole-run-failed alert email — the
+    single most important hardening feature for an unattended scheduled
+    script: a broken pipeline gets noticed instead of silently stopping
+    forever."""
+    subject = "[job-searcher] Run failed — needs attention"
+
+    body = (
+        "A job-searcher run did not complete.\n\n"
+        f"Run id: {run_id if run_id is not None else 'unknown'}\n"
+        f"Error: {error_message}\n\n"
+        "Check logs/run.log for the full traceback, or query the `runs` table "
+        "for history. Common causes: justjoin.it changed page markup (breaks "
+        "enrichment selectors), the alert email template changed (breaks "
+        "parsing), an expired/revoked Google token, or an API outage.\n"
+    )
+
+    return subject, body
