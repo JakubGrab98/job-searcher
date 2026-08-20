@@ -6,20 +6,25 @@ to offers with justjoin.it's native quick-apply.
 
 ## Status
 
-Foundations only: SQLite persistence layer and the filter engine are implemented
-and tested. Ingestion (Gmail), enrichment (Playwright), CV tailoring (LLM), and
-sending are not yet built — see `docs/superpowers/plans/` for the architecture
-plan and follow-on implementation plans.
+Ingestion (Gmail), enrichment (Playwright), filtering, notifications, and CV
+rendering/Drive upload are implemented, tested, and validated against live
+data. Still needed: the actual LLM bullet-selection call (needs
+`ANTHROPIC_API_KEY`) and the sending/auto-apply component. See
+`docs/superpowers/plans/` for the architecture plan and implementation plans.
 
 ## Setup
 
 ```bash
 python -m venv .venv
 .venv/Scripts/pip install -e ".[dev]"
+.venv/Scripts/python -m playwright install chromium
 cp config/filters.example.yaml config/filters.yaml   # then edit with your real criteria
 cp config/cv_library.example.yaml config/cv_library.yaml   # then fill with your real CV content
-cp .env.example .env   # then fill in secrets once later plans add Gmail/LLM integration
+cp .env.example .env   # then fill in secrets
 ```
+
+Google (Gmail + Drive) setup is its own guide: see
+[`docs/google-cloud-setup.md`](docs/google-cloud-setup.md).
 
 If `pip install` fails with an SSL certificate error (common behind antivirus
 HTTPS interception, e.g. Avast), install with the interceptor's root cert trusted:
