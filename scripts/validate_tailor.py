@@ -21,6 +21,7 @@ from jobsearcher.db.models import Offer  # noqa: E402
 from jobsearcher.db.repository import get_offer, insert_offer  # noqa: E402
 from jobsearcher.enrich.enrichment import enrich_offer  # noqa: E402
 from jobsearcher.gmail.auth import get_drive_service  # noqa: E402
+from jobsearcher.ssl_utils import build_combined_ca_bundle  # noqa: E402
 from jobsearcher.tailor.cv_library import load_cv_library  # noqa: E402
 from jobsearcher.tailor.tailor import tailor_cv_for_offer  # noqa: E402
 
@@ -49,7 +50,7 @@ def main():
     drive_service = get_drive_service(
         os.environ["GOOGLE_OAUTH_CLIENT_SECRETS_PATH"], os.environ["GOOGLE_OAUTH_TOKEN_PATH"], ca_bundle_path
     )
-    http_client = httpx.Client(verify=ca_bundle_path) if ca_bundle_path else None
+    http_client = httpx.Client(verify=build_combined_ca_bundle(ca_bundle_path)) if ca_bundle_path else None
     anthropic_client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"], http_client=http_client)
     library = load_cv_library("config/cv_library.yaml")
 

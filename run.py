@@ -31,6 +31,7 @@ from jobsearcher.gmail.auth import get_drive_service, get_gmail_service
 from jobsearcher.gmail.send import send_email
 from jobsearcher.notify.notification import build_failure_alert, build_match_notification
 from jobsearcher.pipeline import run_once
+from jobsearcher.ssl_utils import build_combined_ca_bundle
 from jobsearcher.tailor.cv_library import load_cv_library
 from jobsearcher.tailor.tailor import tailor_cv_for_offer
 
@@ -82,8 +83,11 @@ def main():
         # anthropic's SDK uses httpx, which has its own cert handling
         # separate from requests (OAuth token exchange) and httplib2
         # (actual Gmail/Drive API calls) — same TLS-intercepting-AV story,
-        # needs its own verify= override.
-        http_client = httpx.Client(verify=ca_bundle_path) if ca_bundle_path else None
+        # needs its own verify= override. Combined bundle, not the raw
+        # intercepting cert alone — see ssl_utils.build_combined_ca_bundle.
+        http_client = (
+            httpx.Client(verify=build_combined_ca_bundle(ca_bundle_path)) if ca_bundle_path else None
+        )
         anthropic_client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"], http_client=http_client)
         cv_library = load_cv_library("config/cv_library.yaml")
 
