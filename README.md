@@ -1,21 +1,29 @@
 # job-searcher
 
-Personal tool that ingests justjoin.it "data" category job-alert emails,
-filters offers against `config/filters.yaml`, tailors a CV per matching
-offer via LLM, and emails you the offer link + tailored CV — no auto-apply,
-you submit every application yourself.
+Personal tool that watches justjoin.it for relevant contracts, tailors a CV
+per matching offer via LLM, and emails you the offer link + tailored CV —
+no auto-apply, you submit every application yourself.
+
+Pipeline: ingest justjoin.it job-alert emails (Gmail API) → enrich each
+offer via a headless browser → filter against `config/filters.yaml` →
+tailor a CV from `config/cv_library.yaml` (Claude Haiku, never invents
+content) → render to PDF → upload to Google Drive → email you the match.
 
 ## Status
 
-Feature-complete for its intended scope: ingestion, enrichment, filtering,
-LLM CV tailoring, Drive upload, notifications, run logging/failure alerting
-are all implemented, tested, and validated against live data. There's no
-sending/auto-apply component by design (see the architecture plan's "Why no
-auto-send" section) — `apply_type` (native/external) is still detected and
-shown in the notification for your own reference, nothing acts on it.
-See `docs/superpowers/plans/` for the architecture plan and implementation
-plans, and `docs/tuning-guide.md` for how to adjust filters and the CV
-bullet library.
+Feature-complete for its intended scope and running on a schedule. There's
+no sending/auto-apply component by design (see the architecture plan's
+"Why no auto-send" section) — `apply_type` (native/external) is detected
+and shown in the notification for your own reference, nothing acts on it.
+
+## Docs
+
+| Doc | For |
+|---|---|
+| [`docs/setup-guide.md`](docs/setup-guide.md) | Setting this up from scratch — environment, Google/Anthropic credentials, config, and scheduling |
+| [`docs/google-cloud-setup.md`](docs/google-cloud-setup.md) | The Google Cloud / Gmail / Drive OAuth portion specifically, plus troubleshooting (consent screen errors, SSL certificate issues) |
+| [`docs/tuning-guide.md`](docs/tuning-guide.md) | Adjusting `filters.yaml`/`cv_library.yaml` once it's running, reviewing why an offer was filtered, reviewing run history |
+| `docs/superpowers/plans/` | Architecture plan and implementation history — the "why" behind the decisions above |
 
 ## Running it
 
@@ -24,33 +32,12 @@ bullet library.
 ```
 
 One full pass: ingest new alert emails, enrich each new offer, filter,
-tailor a CV for matches, email you. Meant to run on a schedule (e.g. Windows
-Task Scheduler, every ~30 min) rather than continuously. Every run is
-logged to `logs/run.log` and the `runs` table; a failed run sends a
-best-effort failure alert email.
-
-## Setup
-
-```bash
-python -m venv .venv
-.venv/Scripts/pip install -e ".[dev]"
-.venv/Scripts/python -m playwright install chromium
-cp config/filters.example.yaml config/filters.yaml   # then edit with your real criteria
-cp config/cv_library.example.yaml config/cv_library.yaml   # then fill with your real CV content
-cp .env.example .env   # then fill in secrets
-```
-
-Google (Gmail + Drive) setup is its own guide: see
-[`docs/google-cloud-setup.md`](docs/google-cloud-setup.md). For tuning
-filters/CV content and reviewing run history, see
-[`docs/tuning-guide.md`](docs/tuning-guide.md).
-
-If `pip install` fails with an SSL certificate error (common behind antivirus
-HTTPS interception, e.g. Avast), install with the interceptor's root cert trusted:
-
-```bash
-pip install --cert "<path-to-interceptor-root-cert>.pem" --trusted-host pypi.org --trusted-host files.pythonhosted.org -e ".[dev]"
-```
+tailor a CV for matches, email you. Meant to run on a schedule (see
+`docs/setup-guide.md` for Windows Task Scheduler setup) rather than
+continuously or purely on demand — check how often your justjoin.it alert
+digest actually arrives before picking an interval. Every run is logged to
+`logs/run.log` and the `runs` table; a failed run sends a best-effort
+failure alert email.
 
 ## Tests
 

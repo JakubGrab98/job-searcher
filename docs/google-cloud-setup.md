@@ -8,7 +8,9 @@ This project uses two Google APIs under one OAuth client:
 
 Everything below happens once, in a Google account. This doc exists so it can
 be repeated (new machine, revoked access, new scope) without re-deriving it
-from scratch.
+from scratch. Part of the broader [`setup-guide.md`](setup-guide.md) — start
+there for the full picture, come here for the Google-specific portion and
+troubleshooting.
 
 ## Two-account setup
 

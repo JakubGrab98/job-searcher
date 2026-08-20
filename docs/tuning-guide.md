@@ -1,7 +1,8 @@
 # Tuning Guide
 
 How to adjust what the tool matches on, what your CV emphasizes, and how to
-tell whether it's actually working.
+tell whether it's actually working. For first-time setup, see
+[`setup-guide.md`](setup-guide.md) instead.
 
 ## Tuning `config/filters.yaml`
 
