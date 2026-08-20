@@ -13,6 +13,7 @@ def _row_to_offer(row: sqlite3.Row) -> Offer:
         title=row["title"],
         company=row["company"],
         category=row["category"],
+        description=row["description"],
         seniority=row["seniority"],
         employment_type=row["employment_type"],
         salary_min=row["salary_min"],
@@ -37,15 +38,15 @@ def insert_offer(conn: sqlite3.Connection, offer: Offer) -> int:
     cursor = conn.execute(
         """
         INSERT INTO offers (
-            gmail_message_id, url, title, company, category, seniority,
+            gmail_message_id, url, title, company, category, description, seniority,
             employment_type, salary_min, salary_max, currency, location,
             remote_type, tech_stack, apply_type, status, filter_reasons,
             first_seen_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             offer.gmail_message_id, offer.url, offer.title, offer.company,
-            offer.category, offer.seniority, offer.employment_type,
+            offer.category, offer.description, offer.seniority, offer.employment_type,
             offer.salary_min, offer.salary_max, offer.currency, offer.location,
             offer.remote_type, json.dumps(offer.tech_stack), offer.apply_type,
             offer.status, json.dumps(offer.filter_reasons),
@@ -68,7 +69,7 @@ def get_offer(conn: sqlite3.Connection, offer_id: int) -> Offer | None:
 
 def update_offer_enrichment(conn: sqlite3.Connection, offer_id: int, **fields) -> None:
     allowed = {
-        "seniority", "employment_type", "salary_min", "salary_max", "currency",
+        "description", "seniority", "employment_type", "salary_min", "salary_max", "currency",
         "location", "remote_type", "tech_stack", "apply_type",
     }
     unknown = set(fields) - allowed

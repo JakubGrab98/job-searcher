@@ -31,7 +31,7 @@ def main():
         conn,
         Offer(
             id=None, gmail_message_id="test", url=URL, title="placeholder", company="placeholder",
-            category="Analytics", seniority=None, employment_type=None, salary_min=None, salary_max=None,
+            category="Analytics", description=None, seniority=None, employment_type=None, salary_min=None, salary_max=None,
             currency=None, location="Katowice", remote_type=None, tech_stack=[], apply_type=None,
             status="new", filter_reasons=[], first_seen_at=now, updated_at=now,
         ),

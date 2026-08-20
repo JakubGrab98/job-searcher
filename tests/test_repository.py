@@ -23,6 +23,7 @@ def make_offer(url="https://justjoin.it/job-offer/example-data-engineer"):
         title="Data Engineer",
         company="Acme",
         category="data",
+        description=None,
         seniority=None,
         employment_type=None,
         salary_min=None,

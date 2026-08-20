@@ -11,6 +11,7 @@ def make_offer(**overrides) -> Offer:
         title="Senior Data Engineer",
         company="Acme",
         category="data",
+        description=None,
         seniority="Senior",
         employment_type="B2B",
         salary_min=180,

@@ -9,6 +9,7 @@ class Offer:
     title: str
     company: str | None
     category: str | None
+    description: str | None
     seniority: str | None
     employment_type: str | None
     salary_min: int | None

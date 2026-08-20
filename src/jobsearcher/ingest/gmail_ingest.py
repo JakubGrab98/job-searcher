@@ -37,6 +37,7 @@ def fetch_and_store_new_offers(service, conn, query: str = ALERT_QUERY) -> list[
                 title=card.title,
                 company=card.company,
                 category=category,
+                description=None,
                 seniority=None,
                 employment_type=None,
                 salary_min=None,

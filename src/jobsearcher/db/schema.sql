@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS offers (
     title TEXT NOT NULL,
     company TEXT,
     category TEXT,
+    description TEXT,
     seniority TEXT,
     employment_type TEXT,
     salary_min INTEGER,

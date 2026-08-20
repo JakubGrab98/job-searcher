@@ -18,6 +18,7 @@ def enrich_offer(page, context, conn, offer_id: int, url: str) -> None:
     update_offer_enrichment(
         conn,
         offer_id,
+        description=details.description,
         seniority=details.seniority,
         employment_type=details.contract_type,
         salary_min=details.salary_min,
