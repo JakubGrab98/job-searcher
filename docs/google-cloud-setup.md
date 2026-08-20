@@ -6,10 +6,34 @@ This project uses two Google APIs under one OAuth client:
 - **Google Drive API** — stores generated CV PDFs (`drive.file` scope only —
   the app can see/manage only files it creates itself, not your whole Drive)
 
-Everything below happens once, in your own Google account. This has already
-been done for this project (project `job-searcher-505615`) — this doc exists
-so it can be repeated (new machine, revoked access, new scope) without
-re-deriving it from scratch.
+Everything below happens once, in a Google account. This doc exists so it can
+be repeated (new machine, revoked access, new scope) without re-deriving it
+from scratch.
+
+## Two-account setup
+
+The OAuth credential authenticates as **one** Google account, and Gmail API
+calls always operate on that account's own mailbox ("me") — so whichever
+account grants consent is both where alert emails are read from *and* where
+notification emails are sent *from*. This project deliberately uses two
+different addresses for two different roles:
+
+- **Ingestion account** (`REDACTED_EMAIL`) — a dedicated mailbox.
+  This is the account the OAuth credential authenticates as, and the one that
+  needs justjoin.it's alert emails pointed at it (change this in your
+  justjoin.it account's notification settings — that's on their side, not
+  something this project's code does).
+- **Notification recipient** (`REDACTED_EMAIL`, personal) — set via
+  `NOTIFY_EMAIL` in `.env`. Match emails are sent *from* the ingestion account
+  *to* whatever `NOTIFY_EMAIL` is, so this can be any address — no extra
+  Google setup needed for it, it's just the `to:` header on outgoing mail.
+
+If you ever want ingestion and notifications on the same address again, just
+point both at it — nothing in the code assumes they differ.
+
+This project currently runs on GCP project `job-searcher-dev`, authenticated
+as `REDACTED_EMAIL` (superseded an earlier `job-searcher-505615`
+project that was authenticated as the personal account directly).
 
 ## 1. Create or select a Google Cloud project
 
