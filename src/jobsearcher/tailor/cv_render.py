@@ -48,14 +48,9 @@ def render_cv_html(library: dict, selection) -> str:
     return template.render(**_resolve_context(library, selection))
 
 
-def render_cv_pdf(html: str, output_path: str) -> None:
-    from playwright.sync_api import sync_playwright
-
-    os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
-
-    with sync_playwright() as p:
-        browser = p.chromium.launch()
-        page = browser.new_page()
+def _render_pdf_with_browser(browser, html: str, output_path: str) -> None:
+    page = browser.new_page()
+    try:
         page.set_content(html, wait_until="load")
         page.pdf(
             path=output_path,
@@ -63,4 +58,38 @@ def render_cv_pdf(html: str, output_path: str) -> None:
             print_background=True,
             margin={"top": "0", "bottom": "0", "left": "0", "right": "0"},
         )
-        browser.close()
+    finally:
+        page.close()
+
+
+def render_cv_pdf(html: str, output_path: str, browser=None) -> None:
+    """Renders html to a PDF at output_path.
+
+    If `browser` is provided, reuses it (just opens/closes a page) instead
+    of starting a new Playwright context — required when a caller (e.g.
+    run.py, which keeps a browser open across a whole run for enrichment)
+    already has one open. Playwright's sync API does not support nested
+    sync_playwright() contexts in the same process; calling this without
+    `browser` while another sync_playwright() context is already open in
+    the same thread raises "you are using Playwright Sync API inside the
+    asyncio loop" — confirmed live in production (run.py keeps the
+    enrichment browser open while tailoring runs inside the same pass).
+
+    Without `browser`, manages its own standalone Playwright context —
+    fine for one-off/standalone use (e.g. validate_cv_render.py) where
+    nothing else has Playwright open.
+    """
+    os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
+
+    if browser is not None:
+        _render_pdf_with_browser(browser, html, output_path)
+        return
+
+    from playwright.sync_api import sync_playwright
+
+    with sync_playwright() as p:
+        standalone_browser = p.chromium.launch()
+        try:
+            _render_pdf_with_browser(standalone_browser, html, output_path)
+        finally:
+            standalone_browser.close()

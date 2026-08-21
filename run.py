@@ -33,6 +33,7 @@ from jobsearcher.notify.notification import build_failure_alert, build_match_not
 from jobsearcher.pipeline import run_once
 from jobsearcher.ssl_utils import build_combined_ca_bundle
 from jobsearcher.tailor.cv_library import load_cv_library
+from jobsearcher.tailor.cv_render import render_cv_pdf
 from jobsearcher.tailor.tailor import tailor_cv_for_offer
 
 load_dotenv()
@@ -102,8 +103,18 @@ def main():
                 finally:
                     page.close()
 
+            def render_pdf_fn(html, output_path):
+                # Reuses the already-open enrichment browser instead of
+                # letting render_cv_pdf start its own Playwright context —
+                # a nested sync_playwright() call in the same process
+                # fails ("you are using Playwright Sync API inside the
+                # asyncio loop"), confirmed live in production.
+                render_cv_pdf(html, output_path, browser=browser)
+
             def tailor_fn(conn, offer):
-                return tailor_cv_for_offer(anthropic_client, drive_service, cv_library, conn, offer)
+                return tailor_cv_for_offer(
+                    anthropic_client, drive_service, cv_library, conn, offer, render_pdf_fn=render_pdf_fn
+                )
 
             def send_notification_fn(offer, match_result, cv_version):
                 subject, body = build_match_notification(offer, match_result, cv_version)
