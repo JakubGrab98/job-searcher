@@ -79,7 +79,6 @@
   .skill-name { font-size: 11px; font-weight: 700; margin-bottom: 4px; }
   .skill-bar-bg { background: #dfe4ea; height: 5px; border-radius: 3px; overflow: hidden; }
   .skill-bar-fill { background: #16233b; height: 5px; }
-  .plain-skill { font-size: 11px; font-weight: 700; margin-bottom: 12px; }
   .lang-item { font-size: 11px; margin-bottom: 4px; }
   .pill { display: inline-block; background: #e2e8f0; border-radius: 10px; padding: 3px 10px; font-size: 10px; margin: 0 4px 4px 0; }
 </style>
@@ -148,14 +147,10 @@
       {% if skills %}
       <div class="section-title">Core Skills</div>
       {% for skill in skills %}
-        {% if skill.proficiency %}
         <div class="skill">
           <div class="skill-name">{{ skill.name }}</div>
           <div class="skill-bar-bg"><div class="skill-bar-fill" style="width: {{ skill.proficiency }}%;"></div></div>
         </div>
-        {% else %}
-        <div class="plain-skill">{{ skill.name }}</div>
-        {% endif %}
       {% endfor %}
       {% endif %}
 

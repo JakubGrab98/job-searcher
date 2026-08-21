@@ -21,7 +21,7 @@ certifications:
 
 summaries:
   general_data_engineer:
-    text: "Example summary text for a data engineer."
+    text: "Example summary text for a data engineer. Strong in Python and SQL."
     tags: ["general"]
 
 experience:
@@ -57,3 +57,12 @@ skills:
   - name: "SQL"
     proficiency: 85
     tags: ["sql"]
+  - name: "Snowflake"
+    proficiency: 70
+    tags: ["snowflake"]
+  - name: "ETL / ELT"
+    proficiency: 75
+    tags: ["etl", "elt"]
+  - name: "Tableau"
+    tags: ["tableau"]
+    note: "Present but not a primary strength."

@@ -1,14 +1,64 @@
 import os
+import re
 from importlib import resources
 
 from jinja2 import Template
 
 from jobsearcher.tailor.cv_library import get_bullet_by_id
 
+# Skills without an explicit self-rating (e.g. "present but not a primary
+# strength") still get a bar in the sidebar, just a modest one, for visual
+# consistency with rated skills — no skill should render as unstyled plain
+# text next to a column of bars.
+DEFAULT_PROFICIENCY_WHEN_UNSPECIFIED = 40
+
+
+def _build_keyword_pattern(skills_ctx: list[dict]) -> re.Pattern | None:
+    """Builds a single regex that bolds sidebar skill names wherever they
+    also appear in prose (summary/bullets) — mirrors the reference CV's
+    style of bolding key technologies inline, not just listing them in a
+    sidebar. Compound names ("Azure (Data Factory, Synapse)") are split into
+    their individual parts so each is independently matchable, since prose
+    text mentions "Data Factory" on its own, never the full compound string.
+    """
+    keywords = set()
+    for skill in skills_ctx:
+        for part in re.split(r"[/,()]", skill["name"]):
+            part = part.strip()
+            if len(part) > 1:
+                keywords.add(part)
+    if not keywords:
+        return None
+
+    # Longest-first: at a shared start position (e.g. "Azure" vs "Azure
+    # SQL"), the regex engine tries alternatives in listed order, so this
+    # ordering makes it prefer the longer/more specific match.
+    sorted_keywords = sorted(keywords, key=len, reverse=True)
+    escaped = [re.escape(kw) for kw in sorted_keywords]
+    return re.compile(r"\b(" + "|".join(escaped) + r")\b", re.IGNORECASE)
+
+
+def _bold_keywords(text: str, pattern: re.Pattern | None) -> str:
+    if not pattern or not text:
+        return text
+    return pattern.sub(lambda m: f"<strong>{m.group(0)}</strong>", text)
+
 
 def _resolve_context(library: dict, selection) -> dict:
+    skills_by_name = {s["name"]: s for s in library.get("skills", [])}
+    skills_ctx = []
+    for name in selection.skill_names:
+        skill = skills_by_name.get(name)
+        if skill is None:
+            continue
+        proficiency = skill.get("proficiency") or DEFAULT_PROFICIENCY_WHEN_UNSPECIFIED
+        skills_ctx.append({**skill, "proficiency": proficiency})
+
+    keyword_pattern = _build_keyword_pattern(skills_ctx)
+
     summaries = library.get("summaries", {})
     summary_text = summaries[selection.summary_key]["text"].strip() if selection.summary_key in summaries else ""
+    summary_text = _bold_keywords(summary_text, keyword_pattern)
 
     experience_ctx = []
     for exp in selection.experience:
@@ -16,7 +66,7 @@ def _resolve_context(library: dict, selection) -> dict:
         for bullet_id in exp.bullet_ids:
             bullet = get_bullet_by_id(library, bullet_id)
             if bullet:
-                bullets_text.append(bullet["text"])
+                bullets_text.append(_bold_keywords(bullet["text"], keyword_pattern))
         experience_ctx.append(
             {
                 "company": exp.company,
@@ -26,9 +76,6 @@ def _resolve_context(library: dict, selection) -> dict:
                 "bullets": bullets_text,
             }
         )
-
-    skills_by_name = {s["name"]: s for s in library.get("skills", [])}
-    skills_ctx = [skills_by_name[name] for name in selection.skill_names if name in skills_by_name]
 
     return {
         "candidate": library["candidate"],
